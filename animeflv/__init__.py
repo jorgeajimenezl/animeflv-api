@@ -115,30 +115,36 @@ class AnimeFLV(object):
 
         return ret
 
-    # def getVideoServers(self, id):
-    #     """
-    #     Get in video servers, this work only using the iframe element.
-    #     Return a list of dictionaries.    
+    def getVideoServers(self, id, **kwargs):
+        """
+        Get in video servers, this work only using the iframe element.
+        Return a list of dictionaries.    
 
-    #     :param id: Episode id, like as '36557/nanatsu-no-taizai-1'.
-    #     :rtype: list
-    #     """
+        :param id: Episode id, like as '36557/nanatsu-no-taizai-1'.
+        :rtype: list
+        """
 
-    #     res = self.scraper.get(f"{self.ANIME_VIDEO_URL}{id}")
-    #     body = res.text
-    #     soup = BeautifulSoup(body, 'lxml')
-    #     scripts = soup.find_all('script')
+        res = self.scraper.get(f"{self.ANIME_VIDEO_URL}{id}")
+        body = res.text
+        soup = BeautifulSoup(body, 'lxml')
+        scripts = soup.find_all('script')
 
-    #     for script in scripts:
-    #         content = str(script)
-    #         if 'var videos = {' in content:
-    #             videos = content.split('var videos = ')[1].split(';')[0]
-    #             data = json.loads(videos)
-    #             serverlist = data['SUB']
+        latin = kwargs.get('lat', False)
+        subtitled = kwargs.get('sub', True)
+        servers = []
 
-    #             return serverlist
+        for script in scripts:
+            content = str(script)
+            if 'var videos = {' in content:
+                videos = content.split('var videos = ')[1].split(';')[0]
+                data = json.loads(videos)
 
-    #     return []
+                if 'SUB' in data and subtitled:
+                    servers.append(data['SUB'])
+                if 'LAT' in data and latin:
+                    servers.append(data['LAT'])
+
+        return servers
 
 __version__ = '0.0.1'
 __title__ = 'animeflv'

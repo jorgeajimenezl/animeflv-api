@@ -1,7 +1,6 @@
 import re
 from setuptools import setup, find_packages
 
-version = ''
 with open('animeflv/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE).group(1)
 
@@ -17,7 +16,7 @@ with open('README.md', 'r') as readme:
         license="MIT License",
         author="Jorge Alejandro Jimenez Luna",
         author_email="jorgeajimenezl@nauta.cu",
-        url="https://github.com/jorgeajimenezl/animeflv",
+        url="https://github.com/jorgeajimenezl/animeflv-api",
         classifiers=[
             "Intended Audience :: Developers",
             "License :: MIT License",

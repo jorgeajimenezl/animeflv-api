@@ -10,8 +10,6 @@ def test_downloadLinksByEpisodeID():
 
     assert out != None
     assert isinstance(out, list)
-    assert len(out) != 0
-    assert isinstance(out[0], dict)
     
 def test_search():
     api = AnimeFLV()    
@@ -19,5 +17,10 @@ def test_search():
 
     assert out != None
     assert isinstance(out, list)
-    assert len(out) != 0
-    assert isinstance(out[0], dict)
+
+def test_getVideoServers():
+    api = AnimeFLV()    
+    out = api.getVideoServers('36557/nanatsu-no-taizai-1')
+
+    assert out != None
+    assert isinstance(out, list)
