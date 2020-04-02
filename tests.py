@@ -1,4 +1,5 @@
 from animeflv import AnimeFLV
+import requests
 
 def test_init():
     api = AnimeFLV()
@@ -24,3 +25,10 @@ def test_getVideoServers():
 
     assert out != None
     assert isinstance(out, list)
+
+def test_getAnimeInfo():
+    api = AnimeFLV()    
+    out = api.getAnimeInfo('anime/1590/nanatsu-no-taizai')
+
+    assert out != None
+    assert isinstance(out, dict)
