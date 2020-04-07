@@ -1,7 +1,7 @@
 import cloudscraper
 from bs4 import BeautifulSoup
 from urllib.parse import unquote, quote
-import requests, json
+import requests, json, re
 
 def parseTable(table):
     columns = list([x.string for x in table.thead.tr.find_all('th')])
@@ -64,7 +64,8 @@ class AnimeFLV(object):
                     or row['FORMATO'].string == 'LAT' and latin:
                     ret.append({
                         'server': row['SERVIDOR'].string,
-                        'url': unquote(row['DESCARGAR'].a['href'])
+                        'url': re.sub(r'^http[s]?://ouo.io/[A-Za-z0-9]+/[A-Za-z0-9]+\?[A-Za-z0-9]+=', '', 
+                            unquote(row['DESCARGAR'].a['href']))
                     })
                 
             return ret

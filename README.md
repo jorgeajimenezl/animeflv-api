@@ -37,15 +37,15 @@ Output:
 [
     {
         "server": "Zippyshare",
-        "url": "http://ouo.io/s/y0d65LCP?s=http://www9.zippyshare.com/v/tnAF0l2S/file.html"
+        "url": "http://www9.zippyshare.com/v/tnAF0l2S/file.html"
     },
     {
         "server": "MEGA",
-        "url": "http://ouo.io/s/y0d65LCP?s=https://mega.nz/#!yagHlRKB!AKBvkABb-kiMnb02tMfQDgARiTcAOCIOjPB-MLTxO5s"
+        "url": "https://mega.nz/#!yagHlRKB!AKBvkABb-kiMnb02tMfQDgARiTcAOCIOjPB-MLTxO5s"
     },
     {
         "server": "Openload",
-        "url": "http://ouo.io/s/y0d65LCP?s=https://openload.co/f/MIiuhaEG680/"
+        "url": "https://openload.co/f/MIiuhaEG680/"
     }
 ]
 ```
