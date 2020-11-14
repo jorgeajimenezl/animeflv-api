@@ -1,8 +1,10 @@
 from animeflv import AnimeFLV
+import time
 
 def test_init():
     api = AnimeFLV()
     assert api != None
+    time.sleep(1.0)
 
 def test_downloadLinksByEpisodeID():
     api = AnimeFLV()    
@@ -10,6 +12,7 @@ def test_downloadLinksByEpisodeID():
 
     assert out != None
     assert isinstance(out, list)
+    time.sleep(1.0)
     
 def test_search():
     api = AnimeFLV()    
@@ -17,6 +20,7 @@ def test_search():
 
     assert out != None
     assert isinstance(out, list)
+    time.sleep(1.0)
 
 def test_getVideoServers():
     api = AnimeFLV()    
@@ -24,3 +28,12 @@ def test_getVideoServers():
 
     assert out != None
     assert isinstance(out, list)
+    time.sleep(1.0)
+
+def test_getAnimeInfo():
+    api = AnimeFLV()    
+    out = api.getAnimeInfo('anime/1590/nanatsu-no-taizai')
+
+    assert out != None
+    assert isinstance(out, dict)
+    time.sleep(1.0)
