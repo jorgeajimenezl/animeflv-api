@@ -1,6 +1,7 @@
 # AnimeFLV API
 
 [![Build Status](https://travis-ci.com/jorgeajimenezl/animeflv-api.svg?branch=master)](https://travis-ci.com/jorgeajimenezl/animeflv-api)
+[![Upload Python Package](https://github.com/jorgeajimenezl/animeflv-api/actions/workflows/python-publish.yml/badge.svg)](https://github.com/jorgeajimenezl/animeflv-api/actions/workflows/python-publish.yml)
 
 > AnimeFLV is a python custom API for [animeflv.net](https://animeflv.net) a Spanish anime content website.
 
