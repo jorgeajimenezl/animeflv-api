@@ -175,15 +175,15 @@ class AnimeFLV(object):
         res = self.__scraper.get(f"{BASE_URL}/{id}")
         body = res.text        
         soup = BeautifulSoup(body, 'lxml')
-
         extraInfo = {
-            "title": soup.select_one('body div.Wrapper div.Body div div.Ficha.fchlt div.Container h2.Title').string,
-            "poster": BASE_URL + '/' + soup.select_one('body div div div div div aside div.AnimeCover div.Image figure img')['src'],
+            "title": soup.select_one('body div.Wrapper div.Body div div.Ficha.fchlt div.Container h1.Title').string,
+            "poster": soup.find("meta", property="og:image")['content'],
             "synopsis": soup.select_one('body div div div div div main section div.Description p').string.strip(),
             "rating": soup.select_one('body div div div.Ficha.fchlt div.Container div.vtshr div.Votes span#votes_prmd').string,
             "debut": soup.select_one('body div.Wrapper div.Body div div.Container div.BX.Row.BFluid.Sp20 aside.SidebarA.BFixed p.AnmStts').string,
             "type": soup.select_one('body div.Wrapper div.Body div div.Ficha.fchlt div.Container span.Type').string
         }
+
         extraInfo['banner'] = extraInfo['poster'].replace('covers' , 'banners').strip()
         genres = []
 
@@ -220,7 +220,7 @@ class AnimeFLV(object):
 
         except Exception:
             pass
-
+        
         return (episodes, genres, extraInfo)
 
 __version__ = '0.0.1'
