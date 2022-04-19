@@ -334,4 +334,5 @@ Output:
 + [Jorge Alejandro Jimenez Luna](https://github.com/jorgeajimenezl)
 + [Jimmy Angel Pérez Díaz](https://github.com/JimScope)
 + [Julián Morera](https://github.com/JulianMorera07)
-Copyright © 2022 [RevDev](https://revdev.cc).
+ 
++ Copyright © 2022 [RevDev](https://revdev.cc).
