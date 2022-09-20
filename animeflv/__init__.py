@@ -22,6 +22,7 @@ BROWSE_URL = 'https://animeflv.net/browse?'
 SEARCH_URL = 'https://animeflv.net/browse?q='
 ANIME_VIDEO_URL = 'https://animeflv.net/ver/'
 BASE_EPISODE_IMG_URL = 'https://cdn.animeflv.net/screenshots/'
+ORDER_TITLE = 'https://www3.animeflv.net/browse?order=title&page='
 # BASE_JIKA_URL = ' https://api.jikan.moe/v3/search/anime?q='
 # BASE_JIKA_ANIME_URL = 'https://api.jikan.moe/v3/anime/'
 # BASE_MYANIME_LIST_URL = 'https://myanimelist.net/character/'
@@ -108,7 +109,7 @@ class AnimeFLV(object):
                     'poster': element.select_one('a div.Image figure img')['src'] or element.select('a div.Image figure img')['data-cfsrc'],
                     'banner': (element.select_one('a div.Image figure img')['src'] or element.select('a div.Image figure img')['data-cfsrc']).replace('covers' , 'banners').strip(),
                     'type': element.select_one('div.Description p span.Type').string,
-                    'synopsis': element.select('div.Description p')[1].string.strip(),
+                    'synopsis': element.select('div.Description p')[1].string,
                     'rating': element.select_one('div.Description p span.Vts').string,
                     'debut': element.select_one('a span.Estreno').string.lower() if element.select_one('a span.Estreno') else None
                 })
@@ -116,6 +117,90 @@ class AnimeFLV(object):
                 pass
 
         return ret
+    def getLatestEpisodes(self):
+        """
+        List of the latest episodes uploaded by the platform
+        """
+        res = self.__scraper.get(f"{BASE_URL}")
+        body = res.text
+        soup = BeautifulSoup(body, 'lxml')
+        elements = soup.select('main.Main ul.ListEpisodios li')
+        response = []
+        for element in elements:
+            try:
+                response.append({
+                    'id': element.select_one('a.fa-play')['href'][1:],
+                    'title': element.select_one('a.fa-play strong.Title').string,
+                    'chapter': element.select_one('a.fa-play span.Capi').string,
+                    'image':  element.select("a.fa-play span.Image img"),
+                })
+            except Exception:
+                pass
+        return response
+
+    def ultimateAnime(self):
+        """
+        List of the ultimate added anime
+        """
+        res = self.__scraper.get(f"{BASE_URL}")
+        body = res.text
+        soup = BeautifulSoup(body, 'lxml')
+        elements = soup.select('main.Main ul.ListAnimes li article.alt')
+        response = []
+        for element in elements:
+            try:
+                response.append({
+                    'id': element.select_one('a')['href'][1:],
+                    'title': element.select_one('a h3.Title').string,
+                    'image': BASE_URL + element.select_one('a div.Image figure img')['src'],
+                    'type': element.select_one('a span.Type').string,
+                })
+            except Exception:
+                pass
+        return response
+
+    def emissionAnime(self):
+        """
+        List of the ultimate added anime
+        """
+        res = self.__scraper.get(f"{BASE_URL}")
+        body = res.text
+        soup = BeautifulSoup(body, 'lxml')
+        elements = soup.select('div.BFluid aside.BFixed div.Emision div.Bod ul.ListSdbr li')
+        response = []
+        for element in elements:
+            try:
+                response.append({
+                    'id': element.select_one('a')['href'][1:],
+                    'title': element.select_one('a.fa-play-circle').contents[0],
+                    'type': element.select_one('a span.Type').string,
+                })
+            except Exception:
+                pass
+        return response
+
+    def allAnime(self,id=1):
+        """
+            get all animes
+        """
+        res = self.__scraper.get(f"{ORDER_TITLE}{id}")
+        body = res.text
+        soup = BeautifulSoup(body, 'lxml')
+        elements = soup.select('main.Main ul.ListAnimes li article.Anime')
+        response = []
+        for element in elements:
+            try:
+                response.append({
+                    'id': element.select_one('a')['href'][1:],
+                    'title': element.select_one('a h3.Title').string,
+                    'image': element.select_one('a div.Image figure img')['src'],
+                    'type': element.select_one('a div.Image span.Type').string,
+                    'synopsis': element.select('div.Description p')[1].string,
+                    'total': soup.select_one('main.Main div.NvCnAnm ul.pagination li:nth-last-of-type(2)').string
+                })
+            except Exception:
+                pass
+        return response
 
     def getVideoServers(self, id, **kwargs):
         """
@@ -140,12 +225,10 @@ class AnimeFLV(object):
             if 'var videos = {' in content:
                 videos = content.split('var videos = ')[1].split(';')[0]
                 data = json.loads(videos)
-
                 if 'SUB' in data and subtitled:
                     servers.append(data['SUB'])
                 if 'LAT' in data and latin:
                     servers.append(data['LAT'])
-
         return servers
 
     def getAnimeInfo(self, id):
@@ -157,34 +240,44 @@ class AnimeFLV(object):
         :rtype: dict
         """
         episodes, genres, extraInfo = self.__getAnimeEpisodesInfo__(id)
-
-        return {
+        data = []
+        for info in extraInfo:
+            try:
+                data.append({
+                    'title': info['title'],
+                    'poster': info['poster'],
+                    'synopsis': info['synopsis'],
+                    'debut': info['debut'],
+                    'type': info['type'],
+                })
+            except Exception:
+                pass
+        data.append({
             'id': id,
-            'title': extraInfo['title'] or None,
-            'poster': extraInfo['poster'] or None,
-            'banner': extraInfo['banner'] or None,
-            'synopsis': extraInfo['synopsis'] or None,
-            'rating': extraInfo['rating'] or None,
-            'debut': extraInfo['debut'] or None,
-            'type': extraInfo['type'] or None,
             'genres': genres or None,
             'episodes': episodes or None
-        }
+            })
+        
+        return data
 
     def __getAnimeEpisodesInfo__(self, id):
         res = self.__scraper.get(f"{BASE_URL}/{id}")
-        body = res.text        
+        body = res.text    
         soup = BeautifulSoup(body, 'lxml')
-        extraInfo = {
-            "title": soup.select_one('body div.Wrapper div.Body div div.Ficha.fchlt div.Container h1.Title').string,
-            "poster": soup.find("meta", property="og:image")['content'],
-            "synopsis": soup.select_one('body div div div div div main section div.Description p').string.strip(),
-            "rating": soup.select_one('body div div div.Ficha.fchlt div.Container div.vtshr div.Votes span#votes_prmd').string,
-            "debut": soup.select_one('body div.Wrapper div.Body div div.Container div.BX.Row.BFluid.Sp20 aside.SidebarA.BFixed p.AnmStts').string,
-            "type": soup.select_one('body div.Wrapper div.Body div div.Ficha.fchlt div.Container span.Type').string
-        }
-
-        extraInfo['banner'] = extraInfo['poster'].replace('covers' , 'banners').strip()
+        elements = soup.select('body div.Wrapper div.Body div')
+        extraInfo = []
+        for element in elements:
+            try:
+                extraInfo.append({
+                    'title': element.select_one('div.Ficha.fchlt div.Container h1.Title').string,
+                    'poster': BASE_URL + element.select_one('div.Container div.BFluid aside.SidebarA div.AnimeCover div.Image figure img')['src'],
+                    'synopsis': element.select_one('div.Container div.Sp20 main.Main section.WdgtCn div.Description p').string,
+                    'debut': element.select_one("div.Container div.Sp20 aside.SidebarA p.AnmStts span.fa-tv").string,
+                    'type': element.select_one("div.Ficha.fchlt div.Container span.Type").string,
+                })
+            except Exception:
+                pass
+        
         genres = []
 
         for element in soup.select('main.Main section.WdgtCn nav.Nvgnrs a'):
@@ -220,11 +313,11 @@ class AnimeFLV(object):
 
         except Exception:
             pass
-        
+
         return (episodes, genres, extraInfo)
 
-__version__ = '0.0.1'
+__version__ = '2.0.0'
 __title__ = 'animeflv'
-__author__ = 'Jorge Alejandro Jimenez Luna'
+__author__ = 'Julián Morera'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2021 RevDev'
