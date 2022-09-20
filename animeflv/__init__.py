@@ -318,6 +318,6 @@ class AnimeFLV(object):
 
 __version__ = '2.0.0'
 __title__ = 'animeflv'
-__author__ = 'Jorge Alejandro Jimenez Luna'
+__author__ = 'Julián Morera'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2021 RevDev'
