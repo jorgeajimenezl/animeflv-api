@@ -1,19 +1,21 @@
 import re
 from setuptools import setup, find_packages
 
-with open('animeflv/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE).group(1)
+with open("animeflv/__init__.py", "r") as fd:
+    version = re.search(
+        r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fd.read(), re.MULTILINE
+    ).group(1)
 
-with open('requirements.txt', 'r') as file:                        
+with open("requirements.txt", "r") as file:
     INSTALL_REQUIRES = file.readlines()
 
-with open('README.md', 'r') as readme:
+with open("README.md", "r") as readme:
     setup(
-        name='animeflv',
+        name="animeflv",
         version=version,
         description="AnimeFLV is a python custom API for https://animeflv.net website",
         long_description=readme.read(),
-        long_description_content_type='text/markdown',
+        long_description_content_type="text/markdown",
         license="MIT License",
         author="Jorge Alejandro Jimenez Luna",
         author_email="jorgeajimenezl17@gmail.com",
@@ -31,6 +33,5 @@ with open('README.md', 'r') as readme:
         ],
         keywords="animeflv, anime, videos, manga",
         install_requires=INSTALL_REQUIRES,
-        test_suite="tests",
         packages=find_packages(),
     )
