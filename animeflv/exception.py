@@ -1,0 +1,2 @@
+class AnimeFLVParseError(Exception):
+    pass

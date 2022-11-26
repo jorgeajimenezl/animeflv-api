@@ -1,10 +1,14 @@
 import cloudscraper
-from bs4 import BeautifulSoup
+import json, re
+
+from typing import Dict, List, Tuple, Union
+from bs4 import BeautifulSoup, Tag
 from urllib.parse import unquote, quote
-import requests, json, re
+from enum import Flag, auto
+from .exception import AnimeFLVParseError
 
 
-def parse_table(table):
+def parse_table(table: Tag):
     columns = list([x.string for x in table.thead.tr.find_all("th")])
     rows = []
 
@@ -12,7 +16,7 @@ def parse_table(table):
         values = row.find_all("td")
 
         if len(values) != len(columns):
-            raise Exception("don't match values size with columns size")
+            raise AnimeFLVParseError("Don't match values size with columns size")
 
         rows.append({h: x for h, x in zip(columns, values)})
 
@@ -26,12 +30,23 @@ ANIME_VIDEO_URL = "https://animeflv.net/ver/"
 BASE_EPISODE_IMG_URL = "https://cdn.animeflv.net/screenshots/"
 
 
+class EpisodeFormat(Flag):
+    Subtitled = auto()
+    Dubbed = auto()
+
+
 class AnimeFLV(object):
     def __init__(self, *args, **kwargs):
         session = kwargs.get("session", None)
-        self.__scraper = cloudscraper.create_scraper(sess=session)
+        self._scraper = cloudscraper.create_scraper(session)
 
-    def downloadLinksByEpisodeID(self, id, **kwargs):
+    def get_links(
+        self,
+        id: str,
+        episode: int,
+        format: EpisodeFormat = EpisodeFormat.Subtitled,
+        **kwargs,
+    ) -> List[Dict[str, str]]:
         """
         Get download links of specific episode.
         Return a list of dictionaries like:
@@ -43,17 +58,14 @@ class AnimeFLV(object):
             ...
         ]
 
-        :param id: Episode id, like as '36557/nanatsu-no-taizai-1'.
+        :param id: Anime id, like as 'nanatsu-no-taizai'.
+        :param number: Episode number.
         :param **kwargs: Optional arguments for filter output (see doc).
         :rtype: list
         """
-        res = self.__scraper.get(f"{ANIME_VIDEO_URL}{id}")
-        body = res.text
-        soup = BeautifulSoup(body, "lxml")
+        response = self._scraper.get(f"{ANIME_VIDEO_URL}{id}-{episode}")
+        soup = BeautifulSoup(response.text, "lxml")
         table = soup.find("table", attrs={"class": "RTbl"})
-
-        latin = kwargs.get("lat", False)
-        subtitled = kwargs.get("sub", True)
 
         try:
             rows = parse_table(table)
@@ -62,9 +74,9 @@ class AnimeFLV(object):
             for row in rows:
                 if (
                     row["FORMATO"].string == "SUB"
-                    and subtitled
+                    and EpisodeFormat.Subtitled in format
                     or row["FORMATO"].string == "LAT"
-                    and latin
+                    and EpisodeFormat.Dubbed in format
                 ):
                     ret.append(
                         {
@@ -78,10 +90,10 @@ class AnimeFLV(object):
                     )
 
             return ret
-        except Exception:
-            return []
+        except Exception as e:
+            raise AnimeFLVParseError(e)
 
-    def search(self, query):
+    def search(self, query: str) -> List[Dict[str, str]]:
         """
         Search in animeflv.net by query.
         Return a list of dictionaries like:
@@ -103,9 +115,8 @@ class AnimeFLV(object):
         :rtype: list
         """
 
-        res = self.__scraper.get(f"{SEARCH_URL}{quote(query)}")
-        body = res.text
-        soup = BeautifulSoup(body, "lxml")
+        response = self._scraper.get(f"{SEARCH_URL}{quote(query)}")
+        soup = BeautifulSoup(response.text, "lxml")
         elements = soup.select("div.Container ul.ListAnimes li article")
 
         ret = []
@@ -139,12 +150,18 @@ class AnimeFLV(object):
                         else None,
                     }
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                raise AnimeFLVParseError(e)
 
         return ret
 
-    def getVideoServers(self, id, **kwargs):
+    def get_video_servers(
+        self,
+        id: str,
+        episode: int,
+        format: EpisodeFormat = EpisodeFormat.Subtitled,
+        **kwargs,
+    ) -> List[Dict[str, str]]:
         """
         Get in video servers, this work only using the iframe element.
         Return a list of dictionaries.
@@ -153,13 +170,10 @@ class AnimeFLV(object):
         :rtype: list
         """
 
-        res = self.__scraper.get(f"{ANIME_VIDEO_URL}{id}")
-        body = res.text
-        soup = BeautifulSoup(body, "lxml")
+        response = self._scraper.get(f"{ANIME_VIDEO_URL}{id}-{episode}")
+        soup = BeautifulSoup(response.text, "lxml")
         scripts = soup.find_all("script")
 
-        latin = kwargs.get("lat", False)
-        subtitled = kwargs.get("sub", True)
         servers = []
 
         for script in scripts:
@@ -168,14 +182,14 @@ class AnimeFLV(object):
                 videos = content.split("var videos = ")[1].split(";")[0]
                 data = json.loads(videos)
 
-                if "SUB" in data and subtitled:
+                if "SUB" in data and EpisodeFormat.Subtitled in format:
                     servers.append(data["SUB"])
-                if "LAT" in data and latin:
+                if "LAT" in data and EpisodeFormat.Dubbed in format:
                     servers.append(data["LAT"])
 
         return servers
 
-    def getAnimeInfo(self, id):
+    def get_anime_info(self, id: str) -> Dict[str, Union[Dict[str, str], List[str], str]]:
         """
         Get information about specific anime.
         Return a dictionary.
@@ -183,7 +197,7 @@ class AnimeFLV(object):
         :param id: Anime id, like as 'anime/1590/nanatsu-no-taizai'.
         :rtype: dict
         """
-        episodes, genres, extraInfo = self.__getAnimeEpisodesInfo__(id)
+        episodes, genres, extraInfo = self._get_anime_episodes_info(id)
 
         return {
             "id": id,
@@ -198,12 +212,11 @@ class AnimeFLV(object):
             "episodes": episodes or None,
         }
 
-    def __getAnimeEpisodesInfo__(self, id):
-        res = self.__scraper.get(f"{BASE_URL}/{id}")
-        body = res.text
-        soup = BeautifulSoup(body, "lxml")
+    def _get_anime_episodes_info(self, id: str) -> Tuple[List[Dict[str, str]], List[str], Dict[str, str]]:
+        response = self._scraper.get(f"{BASE_URL}/{id}")
+        soup = BeautifulSoup(response.text, "lxml")
 
-        extraInfo = {
+        information = {
             "title": soup.select_one(
                 "body div.Wrapper div.Body div div.Ficha.fchlt div.Container h2.Title"
             ).string,
@@ -225,7 +238,7 @@ class AnimeFLV(object):
                 "body div.Wrapper div.Body div div.Ficha.fchlt div.Container span.Type"
             ).string,
         }
-        extraInfo["banner"] = extraInfo["poster"].replace("covers", "banners").strip()
+        information["banner"] = information["poster"].replace("covers", "banners").strip()
         genres = []
 
         for element in soup.select("main.Main section.WdgtCn nav.Nvgnrs a"):
@@ -257,11 +270,11 @@ class AnimeFLV(object):
                     {
                         "episode": episode,
                         "id": f"{id}/{animeId}-{episode}",
-                        "imagePreview": f"{BASE_EPISODE_IMG_URL}{AnimeThumbnailsId}/{episode}/th_3.jpg",
+                        "image_preview": f"{BASE_EPISODE_IMG_URL}{AnimeThumbnailsId}/{episode}/th_3.jpg",
                     }
                 )
 
-        except Exception:
-            pass
+        except Exception as e:
+            raise AnimeFLVParseError(e)
 
-        return (episodes, genres, extraInfo)
+        return (episodes, genres, information)
