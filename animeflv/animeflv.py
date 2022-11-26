@@ -1,7 +1,8 @@
 import cloudscraper
 import json, re
 
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Type, Union
+from types import TracebackType
 from bs4 import BeautifulSoup, Tag
 from urllib.parse import unquote, quote
 from enum import Flag, auto
@@ -27,6 +28,7 @@ BASE_URL = "https://animeflv.net"
 BROWSE_URL = "https://animeflv.net/browse?"
 SEARCH_URL = "https://animeflv.net/browse?q="
 ANIME_VIDEO_URL = "https://animeflv.net/ver/"
+ANIME_URL = "https://animeflv.net/anime/"
 BASE_EPISODE_IMG_URL = "https://cdn.animeflv.net/screenshots/"
 
 
@@ -40,10 +42,24 @@ class AnimeFLV(object):
         session = kwargs.get("session", None)
         self._scraper = cloudscraper.create_scraper(session)
 
+    def close(self) -> None:
+        self._scraper.close()
+
+    def __enter__(self) -> "AnimeFLV":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> None:
+        self.close()
+
     def get_links(
         self,
         id: str,
-        episode: int,
+        episode: Union[str, int],
         format: EpisodeFormat = EpisodeFormat.Subtitled,
         **kwargs,
     ) -> List[Dict[str, str]]:
@@ -59,7 +75,7 @@ class AnimeFLV(object):
         ]
 
         :param id: Anime id, like as 'nanatsu-no-taizai'.
-        :param number: Episode number.
+        :param episode: Episode id, like as '1'.
         :param **kwargs: Optional arguments for filter output (see doc).
         :rtype: list
         """
@@ -117,21 +133,27 @@ class AnimeFLV(object):
 
         response = self._scraper.get(f"{SEARCH_URL}{quote(query)}")
         soup = BeautifulSoup(response.text, "lxml")
-        elements = soup.select("div.Container ul.ListAnimes li article")
 
+        if soup.select_one("div.Container ul.ListAnimes li article") is None:
+            raise AnimeFLVParseError("Unable to get list of animes")
+
+        elements = soup.select("div.Container ul.ListAnimes li article")
         ret = []
+
         for element in elements:
             try:
                 ret.append(
                     {
                         "id": element.select_one("div.Description a.Button")["href"][
                             1:
-                        ],
+                        ].removeprefix("anime/"),
                         "title": element.select_one("a h3").string,
-                        "poster": element.select_one("a div.Image figure img")["src"]
-                        or element.select("a div.Image figure img")["data-cfsrc"],
+                        "poster": (
+                            element.select_one("a div.Image figure img").get("src", None)
+                            or element.select("a div.Image figure img")["data-cfsrc"]
+                        ),
                         "banner": (
-                            element.select_one("a div.Image figure img")["src"]
+                            element.select_one("a div.Image figure img").get("src", None)
                             or element.select("a div.Image figure img")["data-cfsrc"]
                         )
                         .replace("covers", "banners")
@@ -139,15 +161,19 @@ class AnimeFLV(object):
                         "type": element.select_one(
                             "div.Description p span.Type"
                         ).string,
-                        "synopsis": element.select("div.Description p")[
-                            1
-                        ].string.strip(),
+                        "synopsis": (
+                            element.select("div.Description p")[1].string.strip()
+                            if element.select("div.Description p")[1].string
+                            else None
+                        ),
                         "rating": element.select_one(
                             "div.Description p span.Vts"
                         ).string,
-                        "debut": element.select_one("a span.Estreno").string.lower()
-                        if element.select_one("a span.Estreno")
-                        else None,
+                        "debut": (
+                            element.select_one("a span.Estreno").string.lower()
+                            if element.select_one("a span.Estreno")
+                            else None
+                        ),
                     }
                 )
             except Exception as e:
@@ -166,7 +192,8 @@ class AnimeFLV(object):
         Get in video servers, this work only using the iframe element.
         Return a list of dictionaries.
 
-        :param id: Episode id, like as '36557/nanatsu-no-taizai-1'.
+        :param id: Anime id, like as 'nanatsu-no-taizai'.
+        :param episode: Episode id, like as '1'.
         :rtype: list
         """
 
@@ -189,12 +216,14 @@ class AnimeFLV(object):
 
         return servers
 
-    def get_anime_info(self, id: str) -> Dict[str, Union[Dict[str, str], List[str], str]]:
+    def get_anime_info(
+        self, id: str
+    ) -> Dict[str, Union[Dict[str, str], List[str], str]]:
         """
         Get information about specific anime.
         Return a dictionary.
 
-        :param id: Anime id, like as 'anime/1590/nanatsu-no-taizai'.
+        :param id: Anime id, like as 'nanatsu-no-taizai'.
         :rtype: dict
         """
         episodes, genres, extraInfo = self._get_anime_episodes_info(id)
@@ -212,8 +241,10 @@ class AnimeFLV(object):
             "episodes": episodes or None,
         }
 
-    def _get_anime_episodes_info(self, id: str) -> Tuple[List[Dict[str, str]], List[str], Dict[str, str]]:
-        response = self._scraper.get(f"{BASE_URL}/{id}")
+    def _get_anime_episodes_info(
+        self, id: str
+    ) -> Tuple[List[Dict[str, str]], List[str], Dict[str, str]]:
+        response = self._scraper.get(f"{ANIME_URL}/{id}")
         soup = BeautifulSoup(response.text, "lxml")
 
         information = {
@@ -238,7 +269,9 @@ class AnimeFLV(object):
                 "body div.Wrapper div.Body div div.Ficha.fchlt div.Container span.Type"
             ).string,
         }
-        information["banner"] = information["poster"].replace("covers", "banners").strip()
+        information["banner"] = (
+            information["poster"].replace("covers", "banners").strip()
+        )
         genres = []
 
         for element in soup.select("main.Main section.WdgtCn nav.Nvgnrs a"):
@@ -268,8 +301,7 @@ class AnimeFLV(object):
             for episode, id in episodes_data:
                 episodes.append(
                     {
-                        "episode": episode,
-                        "id": f"{id}/{animeId}-{episode}",
+                        "id": episode,
                         "image_preview": f"{BASE_EPISODE_IMG_URL}{AnimeThumbnailsId}/{episode}/th_3.jpg",
                     }
                 )
