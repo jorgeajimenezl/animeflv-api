@@ -35,7 +35,7 @@ $ pip install .
 - [X] Search
 - [X] Get Video Servers
 - [X] Get Anime Info
-- [] Get new releases
+- [X] Get new releases (animes and episodes)
 
 ## License
 [MIT](./LICENSE)
