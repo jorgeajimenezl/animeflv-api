@@ -64,3 +64,13 @@ class AnimeFLVTest(unittest.TestCase):
 
             item = res[0]
             self.assertTrue(isinstance(item, dict))
+
+    def test_get_latest_animes(self):
+        with AnimeFLV() as api:
+            res = wrap_request(api.get_latest_animes)
+
+            self.assertGreater(len(res), 0)
+            self.assertTrue(isinstance(res, list))
+
+            item = res[0]
+            self.assertTrue(isinstance(item, dict))

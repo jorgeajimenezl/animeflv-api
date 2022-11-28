@@ -3,7 +3,7 @@ import json, re
 
 from typing import Dict, List, Optional, Tuple, Type, Union
 from types import TracebackType
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup, Tag, ResultSet
 from urllib.parse import unquote, quote, urlencode
 from enum import Flag, auto
 from .exception import AnimeFLVParseError
@@ -155,10 +155,124 @@ class AnimeFLV(object):
         response = self._scraper.get(url)
         soup = BeautifulSoup(response.text, "lxml")
 
-        if soup.select_one("div.Container ul.ListAnimes li article") is None:
+        elements = soup.select("div.Container ul.ListAnimes li article")
+
+        if elements is None:
             raise AnimeFLVParseError("Unable to get list of animes")
 
-        elements = soup.select("div.Container ul.ListAnimes li article")
+        return self._process_anime_list_info(elements)
+
+    def get_video_servers(
+        self,
+        id: str,
+        episode: int,
+        format: EpisodeFormat = EpisodeFormat.Subtitled,
+        **kwargs,
+    ) -> List[Dict[str, str]]:
+        """
+        Get in video servers, this work only using the iframe element.
+        Return a list of dictionaries.
+
+        :param id: Anime id, like as 'nanatsu-no-taizai'.
+        :param episode: Episode id, like as '1'.
+        :rtype: list
+        """
+
+        response = self._scraper.get(f"{ANIME_VIDEO_URL}{id}-{episode}")
+        soup = BeautifulSoup(response.text, "lxml")
+        scripts = soup.find_all("script")
+
+        servers = []
+
+        for script in scripts:
+            content = str(script)
+            if "var videos = {" in content:
+                videos = content.split("var videos = ")[1].split(";")[0]
+                data = json.loads(videos)
+
+                if "SUB" in data and EpisodeFormat.Subtitled in format:
+                    servers.append(data["SUB"])
+                if "LAT" in data and EpisodeFormat.Dubbed in format:
+                    servers.append(data["LAT"])
+
+        return servers
+
+    def get_latest_episodes(self) -> List[Dict[str, str]]:
+        """
+        Get a list of new episodes released (possibly this last week).
+        Return a list
+
+        :rtype: list
+        """
+
+        response = self._scraper.get(BASE_URL)
+        soup = BeautifulSoup(response.text, "lxml")
+
+        elements = soup.select("ul.ListEpisodios li a")
+        ret = []
+
+        for element in elements:
+            try:
+                anime, _, id = element["href"].rpartition("-")
+
+                ret.append(
+                    {
+                        "id": id,
+                        "anime": anime.removeprefix("/ver/"),
+                        "image_preview": f"{BASE_URL}{element.select_one('span.Image img')['src']}",
+                    }
+                )
+            except Exception as e:
+                raise AnimeFLVParseError(e)
+
+        return ret
+
+    def get_latest_animes(self) -> List[Dict[str, str]]:
+        """
+        Get a list of new animes released.
+        Return a list
+
+        :rtype: list
+        """
+
+        response = self._scraper.get(BASE_URL)
+        soup = BeautifulSoup(response.text, "lxml")
+
+        elements = soup.select("ul.ListAnimes li article")
+
+        if elements is None:
+            raise AnimeFLVParseError("Unable to get list of animes")
+
+        return self._process_anime_list_info(elements)
+
+    def get_anime_info(
+        self, id: str
+    ) -> Dict[str, Union[Dict[str, str], List[str], str]]:
+        """
+        Get information about specific anime.
+        Return a dictionary.
+
+        :param id: Anime id, like as 'nanatsu-no-taizai'.
+        :rtype: dict
+        """
+        episodes, genres, extraInfo = self._get_anime_episodes_info(id)
+
+        return {
+            "id": id,
+            "title": extraInfo["title"] or None,
+            "poster": extraInfo["poster"] or None,
+            "banner": extraInfo["banner"] or None,
+            "synopsis": extraInfo["synopsis"] or None,
+            "rating": extraInfo["rating"] or None,
+            "debut": extraInfo["debut"] or None,
+            "type": extraInfo["type"] or None,
+            "genres": genres or None,
+            "episodes": episodes or None,
+        }
+
+    def _process_anime_list_info(
+        self, elements: ResultSet[Tag]
+    ) -> List[Dict[str, str]]:
         ret = []
 
         for element in elements:
@@ -205,89 +319,6 @@ class AnimeFLV(object):
                 raise AnimeFLVParseError(e)
 
         return ret
-
-    def get_video_servers(
-        self,
-        id: str,
-        episode: int,
-        format: EpisodeFormat = EpisodeFormat.Subtitled,
-        **kwargs,
-    ) -> List[Dict[str, str]]:
-        """
-        Get in video servers, this work only using the iframe element.
-        Return a list of dictionaries.
-
-        :param id: Anime id, like as 'nanatsu-no-taizai'.
-        :param episode: Episode id, like as '1'.
-        :rtype: list
-        """
-
-        response = self._scraper.get(f"{ANIME_VIDEO_URL}{id}-{episode}")
-        soup = BeautifulSoup(response.text, "lxml")
-        scripts = soup.find_all("script")
-
-        servers = []
-
-        for script in scripts:
-            content = str(script)
-            if "var videos = {" in content:
-                videos = content.split("var videos = ")[1].split(";")[0]
-                data = json.loads(videos)
-
-                if "SUB" in data and EpisodeFormat.Subtitled in format:
-                    servers.append(data["SUB"])
-                if "LAT" in data and EpisodeFormat.Dubbed in format:
-                    servers.append(data["LAT"])
-
-        return servers
-
-    def get_latest_episodes(self) -> List[Dict[str, str]]:
-        response = self._scraper.get(BASE_URL)
-        soup = BeautifulSoup(response.text, "lxml")
-
-        elements = soup.select("ul.ListEpisodios li a")
-        ret = []
-
-        for element in elements:
-            try:
-                anime, _, id = element["href"].rpartition("-")
-
-                ret.append(
-                    {
-                        "id": id,
-                        "anime": anime.removeprefix("/ver/"),
-                        "image_preview": f"{BASE_URL}{element.select_one('span.Image img')['src']}",
-                    }
-                )
-            except Exception as e:
-                raise AnimeFLVParseError(e)
-
-        return ret
-
-    def get_anime_info(
-        self, id: str
-    ) -> Dict[str, Union[Dict[str, str], List[str], str]]:
-        """
-        Get information about specific anime.
-        Return a dictionary.
-
-        :param id: Anime id, like as 'nanatsu-no-taizai'.
-        :rtype: dict
-        """
-        episodes, genres, extraInfo = self._get_anime_episodes_info(id)
-
-        return {
-            "id": id,
-            "title": extraInfo["title"] or None,
-            "poster": extraInfo["poster"] or None,
-            "banner": extraInfo["banner"] or None,
-            "synopsis": extraInfo["synopsis"] or None,
-            "rating": extraInfo["rating"] or None,
-            "debut": extraInfo["debut"] or None,
-            "type": extraInfo["type"] or None,
-            "genres": genres or None,
-            "episodes": episodes or None,
-        }
 
     def _get_anime_episodes_info(
         self, id: str
