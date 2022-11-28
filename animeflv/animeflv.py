@@ -241,6 +241,29 @@ class AnimeFLV(object):
 
         return servers
 
+    def get_latest_episodes(self) -> List[Dict[str, str]]:
+        response = self._scraper.get(BASE_URL)
+        soup = BeautifulSoup(response.text, "lxml")
+
+        elements = soup.select("ul.ListEpisodios li a")
+        ret = []
+
+        for element in elements:
+            try:
+                anime, _, id = element["href"].rpartition("-")
+
+                ret.append(
+                    {
+                        "id": id,
+                        "anime": anime.removeprefix("/ver/"),
+                        "image_preview": f"{BASE_URL}{element.select_one('span.Image img')['src']}",
+                    }
+                )
+            except Exception as e:
+                raise AnimeFLVParseError(e)
+
+        return ret
+
     def get_anime_info(
         self, id: str
     ) -> Dict[str, Union[Dict[str, str], List[str], str]]:
