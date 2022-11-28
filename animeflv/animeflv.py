@@ -271,7 +271,7 @@ class AnimeFLV(object):
         }
 
     def _process_anime_list_info(
-        self, elements: ResultSet[Tag]
+        self, elements: ResultSet
     ) -> List[Dict[str, str]]:
         ret = []
 
