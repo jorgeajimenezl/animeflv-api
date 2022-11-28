@@ -37,3 +37,10 @@ class AnimeFLVTest(unittest.TestCase):
 
             self.assertGreater(len(res), 0)
             self.assertTrue(isinstance(res, list))
+
+    def test_get_anime_info(self):
+        with AnimeFLV() as api:
+            res = wrap_request(api.get_anime_info, "nanatsu-no-taizai")
+
+            self.assertGreater(len(res), 0)
+            self.assertTrue(isinstance(res, dict))

@@ -249,7 +249,7 @@ class AnimeFLV(object):
 
         information = {
             "title": soup.select_one(
-                "body div.Wrapper div.Body div div.Ficha.fchlt div.Container h2.Title"
+                "body div.Wrapper div.Body div div.Ficha.fchlt div.Container h1.Title"
             ).string,
             "poster": BASE_URL
             + "/"
