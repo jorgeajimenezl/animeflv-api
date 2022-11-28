@@ -4,7 +4,7 @@ import json, re
 from typing import Dict, List, Optional, Tuple, Type, Union
 from types import TracebackType
 from bs4 import BeautifulSoup, Tag
-from urllib.parse import unquote, quote
+from urllib.parse import unquote, quote, urlencode
 from enum import Flag, auto
 from .exception import AnimeFLVParseError
 
@@ -25,8 +25,7 @@ def parse_table(table: Tag):
 
 
 BASE_URL = "https://animeflv.net"
-BROWSE_URL = "https://animeflv.net/browse?"
-SEARCH_URL = "https://animeflv.net/browse?q="
+BROWSE_URL = "https://animeflv.net/browse"
 ANIME_VIDEO_URL = "https://animeflv.net/ver/"
 ANIME_URL = "https://animeflv.net/anime/"
 BASE_EPISODE_IMG_URL = "https://cdn.animeflv.net/screenshots/"
@@ -109,7 +108,14 @@ class AnimeFLV(object):
         except Exception as e:
             raise AnimeFLVParseError(e)
 
-    def search(self, query: str) -> List[Dict[str, str]]:
+    def list(self, page: int = None) -> List[Dict[str, str]]:
+        """
+        Shortcut for search(query=None)
+        """
+
+        return self.search(page=page)
+
+    def search(self, query: str = None, page: int = None) -> List[Dict[str, str]]:
         """
         Search in animeflv.net by query.
         Return a list of dictionaries like:
@@ -128,10 +134,25 @@ class AnimeFLV(object):
         ]
 
         :param query: Query information like: 'Nanatsu no Taizai'.
+        :param page: Page of the information return.
         :rtype: list
         """
 
-        response = self._scraper.get(f"{SEARCH_URL}{quote(query)}")
+        if page is not None and not isinstance(page, int):
+            raise TypeError
+
+        params = dict()
+        if query is not None:
+            params["q"] = query
+        if page is not None:
+            params["page"] = page
+        params = urlencode(params)
+
+        url = f"{BROWSE_URL}"
+        if params != "":
+            url += f"?{params}"
+
+        response = self._scraper.get(url)
         soup = BeautifulSoup(response.text, "lxml")
 
         if soup.select_one("div.Container ul.ListAnimes li article") is None:
@@ -149,11 +170,15 @@ class AnimeFLV(object):
                         ].removeprefix("anime/"),
                         "title": element.select_one("a h3").string,
                         "poster": (
-                            element.select_one("a div.Image figure img").get("src", None)
+                            element.select_one("a div.Image figure img").get(
+                                "src", None
+                            )
                             or element.select("a div.Image figure img")["data-cfsrc"]
                         ),
                         "banner": (
-                            element.select_one("a div.Image figure img").get("src", None)
+                            element.select_one("a div.Image figure img").get(
+                                "src", None
+                            )
                             or element.select("a div.Image figure img")["data-cfsrc"]
                         )
                         .replace("covers", "banners")
