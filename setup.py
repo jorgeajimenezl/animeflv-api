@@ -17,7 +17,7 @@ with open("README.md", "r") as readme:
         long_description=readme.read(),
         long_description_content_type="text/markdown",
         license="MIT License",
-        author="Jorge Alejandro Jimenez Luna",
+        author="Jorge Alejandro Jiménez Luna",
         author_email="jorgeajimenezl17@gmail.com",
         url="https://github.com/jorgeajimenezl/animeflv-api",
         classifiers=[
