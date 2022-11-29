@@ -9,20 +9,21 @@ from enum import Flag, auto
 from .exception import AnimeFLVParseError
 
 
-def removeprefix(_str: str, __prefix: str, /) -> str:
+def removeprefix(str: str, prefix: str) -> str:
     """
-        Remove the prefix of a given string if it contains that
-        prefix for compatability with Python >3.9
+    Remove the prefix of a given string if it contains that
+    prefix for compatability with Python >3.9
 
-        :param _str: string to remove prefix from.
-        :param episode: prefix to remove from the string.
-        :rtype: str
-        """
-    if type(_str) is type(__prefix):
-        if self.startswith(prefix):
-                return self[len(prefix):]
+    :param _str: string to remove prefix from.
+    :param episode: prefix to remove from the string.
+    :rtype: str
+    """
+
+    if type(str) is type(prefix):
+        if str.startswith(prefix):
+                return str[len(prefix):]
         else:
-            return self[:]
+            return str[:]
 
 def parse_table(table: Tag):
     columns = list([x.string for x in table.thead.tr.find_all("th")])
