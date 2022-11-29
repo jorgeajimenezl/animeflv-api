@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup, Tag, ResultSet
 from urllib.parse import unquote, urlencode
 from enum import Flag, auto
 from .exception import AnimeFLVParseError
+from dataclasses import dataclass
 
 
 def removeprefix(str: str, prefix: str) -> str:
@@ -46,6 +47,33 @@ BROWSE_URL = "https://animeflv.net/browse"
 ANIME_VIDEO_URL = "https://animeflv.net/ver/"
 ANIME_URL = "https://animeflv.net/anime/"
 BASE_EPISODE_IMG_URL = "https://cdn.animeflv.net/screenshots/"
+
+
+@dataclass
+class AnimeInfo:
+    id: str | int
+    title: str
+    poster: Optional[str] = None
+    banner: Optional[str] = None
+    synopsis: Optional[str] = None
+    rating: Optional[str] = None
+    genres: Optional[List[str]] = None
+    debut: Optional[str] = None
+    type: Optional[str] = None
+    episodes: Optional[List[Dict[str, str]]] = None
+
+
+@dataclass
+class EpisodeInfo:
+    id: str | int
+    anime: str
+    image_preview: Optional[str] = None
+
+
+@dataclass
+class DownloadLinkInfo:
+    server: str
+    url: str
 
 
 class EpisodeFormat(Flag):
@@ -111,14 +139,14 @@ class AnimeFLV(object):
                     and EpisodeFormat.Dubbed in format
                 ):
                     ret.append(
-                        {
-                            "server": row["SERVIDOR"].string,
-                            "url": re.sub(
+                        DownloadLinkInfo(
+                            server=row["SERVIDOR"].string,
+                            url=re.sub(
                                 r"^http[s]?://ouo.io/[A-Za-z0-9]+/[A-Za-z0-9]+\?[A-Za-z0-9]+=",
                                 "",
                                 unquote(row["DESCARGAR"].a["href"]),
                             ),
-                        }
+                        )
                     )
 
             return ret
@@ -132,27 +160,12 @@ class AnimeFLV(object):
 
         return self.search(page=page)
 
-    def search(self, query: str = None, page: int = None) -> List[Dict[str, str]]:
+    def search(self, query: str = None, page: int = None) -> List[AnimeInfo]:
         """
         Search in animeflv.net by query.
-        Return a list of dictionaries like:
-        [
-            {
-                "id": "...",
-                "title": "...",
-                "poster": " ... ",
-                "banner": "...",
-                "type": "...",
-                "synopsis": "...",
-                "rating": "..."
-                "debut": "...",
-            },
-            ...
-        ]
-
         :param query: Query information like: 'Nanatsu no Taizai'.
         :param page: Page of the information return.
-        :rtype: list
+        :rtype: list[AnimeInfo]
         """
 
         if page is not None and not isinstance(page, int):
@@ -214,7 +227,7 @@ class AnimeFLV(object):
 
         return servers
 
-    def get_latest_episodes(self) -> List[Dict[str, str]]:
+    def get_latest_episodes(self) -> List[EpisodeInfo]:
         """
         Get a list of new episodes released (possibly this last week).
         Return a list
@@ -233,18 +246,18 @@ class AnimeFLV(object):
                 anime, _, id = element["href"].rpartition("-")
 
                 ret.append(
-                    {
-                        "id": id,
-                        "anime": removeprefix(anime, "/ver/"),
-                        "image_preview": f"{BASE_URL}{element.select_one('span.Image img')['src']}",
-                    }
+                    EpisodeInfo(
+                        id=id,
+                        anime=removeprefix(anime, "/ver/"),
+                        image_preview=f"{BASE_URL}{element.select_one('span.Image img')['src']}",
+                    )
                 )
             except Exception as e:
                 raise AnimeFLVParseError(e)
 
         return ret
 
-    def get_latest_animes(self) -> List[Dict[str, str]]:
+    def get_latest_animes(self) -> List[AnimeInfo]:
         """
         Get a list of new animes released.
         Return a list
@@ -262,9 +275,7 @@ class AnimeFLV(object):
 
         return self._process_anime_list_info(elements)
 
-    def get_anime_info(
-        self, id: str
-    ) -> Dict[str, Union[Dict[str, str], List[str], str]]:
+    def get_anime_info(self, id: str) -> AnimeInfo:
         """
         Get information about specific anime.
         Return a dictionary.
@@ -272,73 +283,6 @@ class AnimeFLV(object):
         :param id: Anime id, like as 'nanatsu-no-taizai'.
         :rtype: dict
         """
-        episodes, genres, extraInfo = self._get_anime_episodes_info(id)
-
-        return {
-            "id": id,
-            "title": extraInfo["title"] or None,
-            "poster": extraInfo["poster"] or None,
-            "banner": extraInfo["banner"] or None,
-            "synopsis": extraInfo["synopsis"] or None,
-            "rating": extraInfo["rating"] or None,
-            "debut": extraInfo["debut"] or None,
-            "type": extraInfo["type"] or None,
-            "genres": genres or None,
-            "episodes": episodes or None,
-        }
-
-    def _process_anime_list_info(self, elements: ResultSet) -> List[Dict[str, str]]:
-        ret = []
-
-        for element in elements:
-            try:
-                ret.append(
-                    {
-                        "id": removeprefix(
-                            element.select_one("div.Description a.Button")["href"][1:],
-                            "anime/",
-                        ),
-                        "title": element.select_one("a h3").string,
-                        "poster": (
-                            element.select_one("a div.Image figure img").get(
-                                "src", None
-                            )
-                            or element.select("a div.Image figure img")["data-cfsrc"]
-                        ),
-                        "banner": (
-                            element.select_one("a div.Image figure img").get(
-                                "src", None
-                            )
-                            or element.select("a div.Image figure img")["data-cfsrc"]
-                        )
-                        .replace("covers", "banners")
-                        .strip(),
-                        "type": element.select_one(
-                            "div.Description p span.Type"
-                        ).string,
-                        "synopsis": (
-                            element.select("div.Description p")[1].string.strip()
-                            if element.select("div.Description p")[1].string
-                            else None
-                        ),
-                        "rating": element.select_one(
-                            "div.Description p span.Vts"
-                        ).string,
-                        "debut": (
-                            element.select_one("a span.Estreno").string.lower()
-                            if element.select_one("a span.Estreno")
-                            else None
-                        ),
-                    }
-                )
-            except Exception as e:
-                raise AnimeFLVParseError(e)
-
-        return ret
-
-    def _get_anime_episodes_info(
-        self, id: str
-    ) -> Tuple[List[Dict[str, str]], List[str], Dict[str, str]]:
         response = self._scraper.get(f"{ANIME_URL}/{id}")
         soup = BeautifulSoup(response.text, "lxml")
 
@@ -393,15 +337,66 @@ class AnimeFLV(object):
             animeId = info_ids[0][2]
             # nextEpisodeDate = info_ids[0][3] if len(info_ids[0]) > 4 else None
 
-            for episode, id in episodes_data:
+            for episode, _ in episodes_data:
                 episodes.append(
-                    {
-                        "id": episode,
-                        "image_preview": f"{BASE_EPISODE_IMG_URL}{AnimeThumbnailsId}/{episode}/th_3.jpg",
-                    }
+                    EpisodeInfo(
+                        id=episode,
+                        anime=id,
+                        image_preview=f"{BASE_EPISODE_IMG_URL}{AnimeThumbnailsId}/{episode}/th_3.jpg",
+                    )
                 )
 
         except Exception as e:
             raise AnimeFLVParseError(e)
 
-        return (episodes, genres, information)
+        return AnimeInfo(
+            id=id,
+            episodes=episodes,
+            genres=genres,
+            **information,
+        )
+
+    def _process_anime_list_info(self, elements: ResultSet) -> List[AnimeInfo]:
+        ret = []
+
+        for element in elements:
+            try:
+                ret.append(
+                    AnimeInfo(
+                        id=removeprefix(
+                            element.select_one("div.Description a.Button")["href"][1:],
+                            "anime/",
+                        ),
+                        title=element.select_one("a h3").string,
+                        poster=(
+                            element.select_one("a div.Image figure img").get(
+                                "src", None
+                            )
+                            or element.select("a div.Image figure img")["data-cfsrc"]
+                        ),
+                        banner=(
+                            element.select_one("a div.Image figure img").get(
+                                "src", None
+                            )
+                            or element.select("a div.Image figure img")["data-cfsrc"]
+                        )
+                        .replace("covers", "banners")
+                        .strip(),
+                        type=element.select_one("div.Description p span.Type").string,
+                        synopsis=(
+                            element.select("div.Description p")[1].string.strip()
+                            if element.select("div.Description p")[1].string
+                            else None
+                        ),
+                        rating=element.select_one("div.Description p span.Vts").string,
+                        debut=(
+                            element.select_one("a span.Estreno").string.lower()
+                            if element.select_one("a span.Estreno")
+                            else None
+                        ),
+                    )
+                )
+            except Exception as e:
+                raise AnimeFLVParseError(e)
+
+        return ret

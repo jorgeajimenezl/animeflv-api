@@ -1,6 +1,6 @@
-from .animeflv import AnimeFLV
+from .animeflv import AnimeFLV, EpisodeFormat, EpisodeInfo, AnimeInfo
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 __title__ = "animeflv"
 __author__ = "Jorge Alejandro Jiménez Luna"
 __license__ = "MIT"

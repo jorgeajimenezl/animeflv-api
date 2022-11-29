@@ -1,6 +1,6 @@
 import unittest
 import time
-from animeflv import AnimeFLV
+from animeflv import AnimeFLV, EpisodeInfo, AnimeInfo
 from cloudscraper.exceptions import CloudflareChallengeError
 
 
@@ -30,7 +30,7 @@ class AnimeFLVTest(unittest.TestCase):
             self.assertTrue(isinstance(res, list))
 
             item = res[0]
-            self.assertTrue(isinstance(item, dict))
+            self.assertTrue(isinstance(item, AnimeInfo))
 
     def test_list(self):
         with AnimeFLV() as api:
@@ -40,7 +40,7 @@ class AnimeFLVTest(unittest.TestCase):
             self.assertTrue(isinstance(res, list))
 
             item = res[0]
-            self.assertTrue(isinstance(item, dict))
+            self.assertTrue(isinstance(item, AnimeInfo))
 
     def test_get_video_servers(self):
         with AnimeFLV() as api:
@@ -53,8 +53,7 @@ class AnimeFLVTest(unittest.TestCase):
         with AnimeFLV() as api:
             res = wrap_request(api.get_anime_info, "nanatsu-no-taizai")
 
-            self.assertGreater(len(res), 0)
-            self.assertTrue(isinstance(res, dict))
+            self.assertTrue(isinstance(res, AnimeInfo))
 
     def test_get_latest_episodes(self):
         with AnimeFLV() as api:
@@ -64,7 +63,7 @@ class AnimeFLVTest(unittest.TestCase):
             self.assertTrue(isinstance(res, list))
 
             item = res[0]
-            self.assertTrue(isinstance(item, dict))
+            self.assertTrue(isinstance(item, EpisodeInfo))
 
     def test_get_latest_animes(self):
         with AnimeFLV() as api:
@@ -74,4 +73,4 @@ class AnimeFLVTest(unittest.TestCase):
             self.assertTrue(isinstance(res, list))
 
             item = res[0]
-            self.assertTrue(isinstance(item, dict))
+            self.assertTrue(isinstance(item, AnimeInfo))
