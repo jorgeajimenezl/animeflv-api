@@ -9,6 +9,23 @@ from enum import Flag, auto
 from .exception import AnimeFLVParseError
 
 
+def removeprefix(str: str, prefix: str) -> str:
+    """
+    Remove the prefix of a given string if it contains that
+    prefix for compatability with Python >3.9
+
+    :param _str: string to remove prefix from.
+    :param episode: prefix to remove from the string.
+    :rtype: str
+    """
+
+    if type(str) is type(prefix):
+        if str.startswith(prefix):
+            return str[len(prefix) :]
+        else:
+            return str[:]
+
+
 def parse_table(table: Tag):
     columns = list([x.string for x in table.thead.tr.find_all("th")])
     rows = []
@@ -218,7 +235,7 @@ class AnimeFLV(object):
                 ret.append(
                     {
                         "id": id,
-                        "anime": anime.removeprefix("/ver/"),
+                        "anime": removeprefix(anime, "/ver/"),
                         "image_preview": f"{BASE_URL}{element.select_one('span.Image img')['src']}",
                     }
                 )
@@ -277,9 +294,10 @@ class AnimeFLV(object):
             try:
                 ret.append(
                     {
-                        "id": element.select_one("div.Description a.Button")["href"][
-                            1:
-                        ].removeprefix("anime/"),
+                        "id": removeprefix(
+                            element.select_one("div.Description a.Button")["href"][1:],
+                            "anime/",
+                        ),
                         "title": element.select_one("a h3").string,
                         "poster": (
                             element.select_one("a div.Image figure img").get(
