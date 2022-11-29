@@ -4,7 +4,7 @@ import json, re
 from typing import Dict, List, Optional, Tuple, Type, Union
 from types import TracebackType
 from bs4 import BeautifulSoup, Tag, ResultSet
-from urllib.parse import unquote, quote, urlencode
+from urllib.parse import unquote, urlencode
 from enum import Flag, auto
 from .exception import AnimeFLVParseError
 
@@ -270,9 +270,7 @@ class AnimeFLV(object):
             "episodes": episodes or None,
         }
 
-    def _process_anime_list_info(
-        self, elements: ResultSet
-    ) -> List[Dict[str, str]]:
+    def _process_anime_list_info(self, elements: ResultSet) -> List[Dict[str, str]]:
         ret = []
 
         for element in elements:
