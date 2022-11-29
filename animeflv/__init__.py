@@ -1,6 +1,6 @@
 from .animeflv import AnimeFLV
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 __title__ = "animeflv"
 __author__ = "Jorge Alejandro Jiménez Luna"
 __license__ = "MIT"
