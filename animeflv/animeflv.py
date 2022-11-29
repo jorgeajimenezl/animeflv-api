@@ -106,7 +106,7 @@ class AnimeFLV(object):
         episode: Union[str, int],
         format: EpisodeFormat = EpisodeFormat.Subtitled,
         **kwargs,
-    ) -> List[Dict[str, str]]:
+    ) -> List[DownloadLinkInfo]:
         """
         Get download links of specific episode.
         Return a list of dictionaries like:
