@@ -21,9 +21,10 @@ def removeprefix(str: str, prefix: str) -> str:
 
     if type(str) is type(prefix):
         if str.startswith(prefix):
-                return str[len(prefix):]
+            return str[len(prefix) :]
         else:
             return str[:]
+
 
 def parse_table(table: Tag):
     columns = list([x.string for x in table.thead.tr.find_all("th")])
@@ -293,9 +294,10 @@ class AnimeFLV(object):
             try:
                 ret.append(
                     {
-                        "id": removeprefix(element.select_one("div.Description a.Button")["href"][
-                            1:
-                        ], "anime/"),
+                        "id": removeprefix(
+                            element.select_one("div.Description a.Button")["href"][1:],
+                            "anime/",
+                        ),
                         "title": element.select_one("a h3").string,
                         "poster": (
                             element.select_one("a div.Image figure img").get(

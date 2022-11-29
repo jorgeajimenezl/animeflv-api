@@ -1,7 +1,7 @@
 import unittest
 import time
 from animeflv import AnimeFLV
-import cloudscraper
+from cloudscraper.exceptions import CloudflareChallengeError
 
 
 def wrap_request(func, *args, count: int = 5):
@@ -11,13 +11,14 @@ def wrap_request(func, *args, count: int = 5):
         try:
             r = func(*args)
             return r
+        except CloudflareChallengeError:
+            # cloudscraper will error because this feature isn't free, ignore this for the Tests
+            return ["Lorem Ipsum"]
         except Exception as e:
-            if isinstance(e, cloudscraper.exceptions.CloudflareChallengeError): # cloudscraper will error because this feature isn't free, ignore this for the Tests
-                return ["Lorem Ipsum"]
             notes.append(e)
             time.sleep(5)
-    else: # If the loop doesn't `break`, raise the Exception
-        raise Exception([e] + notes)
+    else:  # If the loop doesn't `break`, raise the Exception
+        raise Exception(notes)
 
 
 class AnimeFLVTest(unittest.TestCase):
