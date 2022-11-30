@@ -51,14 +51,14 @@ BASE_EPISODE_IMG_URL = "https://cdn.animeflv.net/screenshots/"
 
 @dataclass
 class EpisodeInfo:
-    id: str | int
+    id: Union[str, int]
     anime: str
     image_preview: Optional[str] = None
 
 
 @dataclass
 class AnimeInfo:
-    id: str | int
+    id: Union[str, int]
     title: str
     poster: Optional[str] = None
     banner: Optional[str] = None
