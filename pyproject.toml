@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "animeflv"
+license = { file = "LICENSE" }
+description = "AnimeFLV is a python custom API for https://animeflv.net website"
+requires-python = ">=3.5"
+keywords = ["animeflv", "anime", "manga"]
+authors = [{ name = "Jorge Alejandro Jiménez Luna", email = "jorgeajimenezl17@gmail.com" }]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dynamic = ["version", "dependencies", "readme"]
+
+[tool.setuptools.dynamic]
+version = { attr = "animeflv.__version__" }
+readme = { file = ["README.md"] }
+dependencies = { file = ["requirements.txt"] }
