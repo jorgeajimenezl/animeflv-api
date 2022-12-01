@@ -4,11 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "animeflv"
-license = { file = "LICENSE" }
+license = { text = "MIT" }
 description = "AnimeFLV is a python custom API for https://animeflv.net website"
 requires-python = ">=3.5"
 keywords = ["animeflv", "anime", "manga"]
 authors = [{ name = "Jorge Alejandro Jiménez Luna", email = "jorgeajimenezl17@gmail.com" }]
+urls = { homepage = "https://github.com/jorgeajimenezl/animeflv-api" }
+readme = "README.md"
 classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
@@ -22,9 +24,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
 ]
-dynamic = ["version", "dependencies", "readme"]
+dynamic = ["version", "dependencies"]
 
 [tool.setuptools.dynamic]
 version = { attr = "animeflv.__version__" }
-readme = { file = ["README.md"] }
 dependencies = { file = ["requirements.txt"] }
