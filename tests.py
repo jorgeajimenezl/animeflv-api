@@ -1,10 +1,8 @@
 import unittest
 import time
 from typing import Any
-import traceback as tb
 from cloudscraper.exceptions import CloudflareChallengeError
 from animeflv import AnimeFLV, EpisodeInfo, AnimeInfo
-from animeflv.exception import AnimeFLVParseError
 
 
 def wrap_request(func, *args, count: int = 5, expected: Any):
