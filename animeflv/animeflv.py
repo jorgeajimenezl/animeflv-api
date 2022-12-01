@@ -150,8 +150,8 @@ class AnimeFLV(object):
                     )
 
             return ret
-        except Exception as e:
-            raise AnimeFLVParseError(e)
+        except Exception as exc:
+            raise AnimeFLVParseError(exc)
 
     def list(self, page: int = None) -> List[Dict[str, str]]:
         """
@@ -249,11 +249,11 @@ class AnimeFLV(object):
                     EpisodeInfo(
                         id=id,
                         anime=removeprefix(anime, "/ver/"),
-                        image_preview=f"{BASE_URL}{element.select_one('span.Image img')['src']}",
+                        image_preview=f"{BASE_URL}{element.select_one('span.Image img').get('src')}",
                     )
                 )
-            except Exception as e:
-                raise AnimeFLVParseError(e)
+            except Exception as exc:
+                raise AnimeFLVParseError(exc)
 
         return ret
 
@@ -294,7 +294,7 @@ class AnimeFLV(object):
             + "/"
             + soup.select_one(
                 "body div div div div div aside div.AnimeCover div.Image figure img"
-            )["src"],
+            ).get("src", ""),
             "synopsis": soup.select_one(
                 "body div div div div div main section div.Description p"
             ).string.strip(),
@@ -346,8 +346,8 @@ class AnimeFLV(object):
                     )
                 )
 
-        except Exception as e:
-            raise AnimeFLVParseError(e)
+        except Exception as exc:
+            raise AnimeFLVParseError(exc)
 
         return AnimeInfo(
             id=id,
@@ -372,13 +372,13 @@ class AnimeFLV(object):
                             element.select_one("a div.Image figure img").get(
                                 "src", None
                             )
-                            or element.select("a div.Image figure img")["data-cfsrc"]
+                            or element.select_one("a div.Image figure img")["data-cfsrc"]
                         ),
                         banner=(
                             element.select_one("a div.Image figure img").get(
                                 "src", None
                             )
-                            or element.select("a div.Image figure img")["data-cfsrc"]
+                            or element.select_one("a div.Image figure img")["data-cfsrc"]
                         )
                         .replace("covers", "banners")
                         .strip(),
@@ -396,7 +396,7 @@ class AnimeFLV(object):
                         ),
                     )
                 )
-            except Exception as e:
-                raise AnimeFLVParseError(e)
+            except Exception as exc:
+                raise AnimeFLVParseError(exc)
 
         return ret
