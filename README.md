@@ -6,23 +6,28 @@
 > AnimeFLV is a python custom API for [animeflv.net](https://animeflv.net) a Spanish anime content website.
 
 ## Installation
+
 For install with pip:
+
 ```bash
-$ pip install animeflv
+pip install animeflv
 ```
 
 Install from source:
+
 ```bash
-$ git clone https://github.com/jorgeajimenezl/animeflv-api.git
-$ cd animeflv
-$ git install -r requirements.txt
-$ pip install .
+git clone https://github.com/jorgeajimenezl/animeflv-api.git
+cd animeflv
+git install -r requirements.txt
+pip install .
 ```
 
 ## API Documentation
+
 #### [Read this](https://github.com/jorgeajimenezl/animeflv-api/wiki) | [Watch videos](https://youtube.com)
 
-#### Create animeflv api instance:
+#### Create animeflv api instance
+
 ```python
 >>> from animeflv import AnimeFLV
 >>> with AnimeFLV() as api:
@@ -31,6 +36,7 @@ $ pip install .
 ```
 
 #### Features
+
 - [X] Get download links by episodes
 - [X] Search
 - [X] Get Video Servers
@@ -38,8 +44,10 @@ $ pip install .
 - [X] Get new releases (animes and episodes)
 
 ## License
+
 [MIT](./LICENSE)
 
 ## Authors
-+ [Jorge Alejandro Jimenez Luna](https://github.com/jorgeajimenezl)
-+ [Jimmy Angel Pérez Díaz](https://github.com/JimScope)
+
+- [Jorge Alejandro Jiménez Luna](https://github.com/jorgeajimenezl)
+- [Jimmy Angel Pérez Díaz](https://github.com/JimScope)
