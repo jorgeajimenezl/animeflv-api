@@ -18,7 +18,7 @@ Install from source:
 ```bash
 git clone https://github.com/jorgeajimenezl/animeflv-api.git
 cd animeflv
-git install -r requirements.txt
+pip install -r requirements.txt
 pip install .
 ```
 
