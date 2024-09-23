@@ -286,6 +286,10 @@ class AnimeFLV(object):
         response = self._scraper.get(f"{ANIME_URL}/{id}")
         soup = BeautifulSoup(response.text, "lxml")
 
+        synopsis = soup.select_one(
+                "body div div div div div main section div.Description p"
+            ).string
+
         information = {
             "title": soup.select_one(
                 "body div.Wrapper div.Body div div.Ficha.fchlt div.Container h1.Title"
@@ -295,9 +299,7 @@ class AnimeFLV(object):
             + soup.select_one(
                 "body div div div div div aside div.AnimeCover div.Image figure img"
             ).get("src", ""),
-            "synopsis": soup.select_one(
-                "body div div div div div main section div.Description p"
-            ).string.strip(),
+            "synopsis": synopsis.strip() if synopsis else None,
             "rating": soup.select_one(
                 "body div div div.Ficha.fchlt div.Container div.vtshr div.Votes span#votes_prmd"
             ).string,

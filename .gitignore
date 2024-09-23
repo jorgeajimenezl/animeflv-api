@@ -46,3 +46,6 @@ target/
 
 # Sublime Text 2
 *.sublime*
+
+# Virtualenv
+.venv
